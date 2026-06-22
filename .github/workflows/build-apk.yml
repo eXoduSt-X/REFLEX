@@ -51,13 +51,14 @@ jobs:
         }
         EOF
 
-        # 4. Crear el AndroidManifest.xml básico con permisos de lectura local
+        # 4. Crear el AndroidManifest.xml básico con soporte de tráfico y lectura local
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <application
                 android:label="Mapa Reflexología"
                 android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-                android:allowBackup="true">
+                android:allowBackup="true"
+                android:usesCleartextTraffic="true">
                 <activity android:name="com.reflexologia.app.MainActivity" android:exported="true">
                     <intent-filter>
                         <action android:name="android.intent.action.MAIN" />
