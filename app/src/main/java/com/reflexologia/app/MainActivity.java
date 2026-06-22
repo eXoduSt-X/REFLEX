@@ -13,7 +13,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Pantalla completa inmersiva (sin barra de estado)
+        // Pantalla completa inmersiva
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
                             WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -21,16 +21,18 @@ public class MainActivity extends Activity {
         WebView myWebView = new WebView(this);
         WebSettings webSettings = myWebView.getSettings();
         
-        // Ajustes clave para que tu JS y JSON locales carguen en Android
+        // 🛠️ CONFIGURACIONES CRÍTICAS PARA IMPEDIR EL REBLOQUEO DEL JSON:
         webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
         webSettings.setAllowFileAccess(true);
+        
+        // Estas dos líneas permiten hacer fetch() local a organos.json sin romper el CORS
         webSettings.setAllowFileAccessFromFileURLs(true);
         webSettings.setAllowUniversalAccessFromFileURLs(true);
-        webSettings.setDomStorageEnabled(true);
         
         myWebView.setWebViewClient(new WebViewClient());
         
-        // Carga tu index.html desde la carpeta assets
+        // Carga el mapa desde assets
         myWebView.loadUrl("file:///android_asset/index.html");
         setContentView(myWebView);
     }
