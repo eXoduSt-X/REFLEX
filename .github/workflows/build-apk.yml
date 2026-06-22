@@ -68,10 +68,15 @@ jobs:
         </manifest>
         EOF
 
-    # 🛠️ PASO CORREGIDO: Instalamos gradle globalmente para generar el archivo ejecutable 'gradlew'
+    # 🛠️ PASO CORREGIDO: Usamos la acción oficial para configurar Gradle 8.5 de forma limpia
+    - name: Configurar Gradle Moderno
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: 8.5
+
+    # Generamos el wrapper usando la versión moderna ya activa
     - name: Inicializar Gradle Wrapper
       run: |
-        sudo apt-get update && sudo apt-get install -y gradle
         gradle wrapper --gradle-version 8.5
         chmod +x gradlew
 
