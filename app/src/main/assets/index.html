@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Reflexologia</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0c0a0f; /* Fondo negro con un sutil matiz oscuro */
+            color: #f1edf7;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 12px;
+            border-bottom: 1px solid #251f30;
+            background-color: #14111a;
+        }
+
+        h1 {
+            color: #00AEF0; /* 🔄 Cambiado a tu nuevo color brillante */
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Visor del Mapa */
+        .map-viewport {
+            flex: 12;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0c0a0f;
+            padding: 10px;
+        }
+
+        .map-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 800 / 748;
+        }
+
+        .map-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .svg-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .highlight-path {
+            fill: #FFA500; 
+            fill-opacity: 0.4;
+            stroke: #000000; 
+            stroke-width: 4;
+        }
+
+        /* PANEL DE INFORMACIÓN INTEGRADO */
+        .info-box {
+            background-color: #14111a;
+            border-top: 1px solid #251f30; 
+            padding: 15px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.6);
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .info-box h3 {
+            margin: 0 0 6px 0;
+            color: #00AEF0; /* 🔄 Título del órgano cambiado a tu nuevo color */
+            font-size: 16px;
+        }
+
+        .info-box p {
+            margin: 0;
+            color: #e1dbe6;
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-line;
+        }
+
+        /* Panel de Lista inferior scrolleable */
+        .sidebar {
+            flex: 8;
+            overflow-y: auto;
+            background-color: #100d14;
+            /* 🛠️ LÍNEA DIVISORIA ALTAMENTE NOTORIA CON TU NUEVO COLOR */
+            border-top: 2px solid #00AEF0; 
+        }
+
+        .organ-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid #251f30;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .organ-item.active {
+            background-color: rgba(0, 174, 240, 0.1); /* 🔄 Fondo translúcido con tu nuevo color */
+            border-left: 4px solid #00AEF0; /* 🔄 Indicador izquierdo con tu nuevo color */
+        }
+
+        .organ-id {
+            background-color: #251f30;
+            color: #00AEF0; /* 🔄 ID cambiado a tu nuevo color */
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-right: 15px;
+            font-size: 14px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* Ajustes de diseño en pantallas grandes (PC / Tablet horizontal) */
+        @media (min-width: 768px) {
+            .main-container {
+                flex-direction: row;
+            }
+            .sidebar {
+                width: 30%;
+                height: auto;
+                flex: none;
+                border-top: none; 
+                border-right: 1px solid #251f30; 
+            }
+            .map-viewport {
+                width: 70%;
+                flex: none;
+                height: 100%;
+            }
+            .info-box {
+                position: absolute;
+                bottom: 25px;
+                left: 25px;
+                width: 320px;
+                max-height: 300px;
+                border: 1px solid #00AEF0; /* 🔄 Borde de caja en PC cambiado */
+                border-radius: 8px;
+                background-color: rgba(20, 17, 26, 0.95);
+                backdrop-filter: blur(4px);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Mapa de Reflexologia</h1>
+    </header>
+
+    <div class="main-container">
+        <div class="map-viewport">
+            <div class="map-container">
+                <img id="map-background" src="P.png" alt="Mapa Base" class="map-bg">
+                <svg id="svg-canvas" class="svg-overlay" viewBox="0 0 800 748">
+                    <path id="active-path" class="highlight-path" d="" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="info-box" id="info-panel">
+            <h3 id="info-title">Cargando...</h3>
+            <p id="info-text">Selecciona un punto de la lista para ver su descripción detallada aquí.</p>
+        </div>
+
+        <div class="sidebar" id="sidebar-list"></div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", "organos.json", true);
+            
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200 || xhr.status === 0) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            
+                            data.sort((a, b) => {
+                                const aIsNum = /^\d/.test(a.id);
+                                const bIsNum = /^\d/.test(b.id);
+
+                                if (aIsNum && !bIsNum) return 1;
+                                if (!aIsNum && bIsNum) return -1;
+
+                                return a.id.localeCompare(b.id, undefined, {numeric: true, sensitivity: 'base'});
+                            });
+                            
+                            renderSidebar(data);
+                            
+                            if (data.length > 0) {
+                                updateMap(data[0]);
+                            }
+                        } catch (e) {
+                            console.error("Error al procesar el formato del JSON:", e);
+                            document.getElementById('info-title').innerText = "Error de formato";
+                            document.getElementById('info-text').innerText = "El archivo JSON contiene un error de sintaxis interna.";
+                        }
+                    } else {
+                        console.error("No se pudo leer el archivo organos.json. Status:", xhr.status);
+                        document.getElementById('info-title').innerText = "Error de carga";
+                        document.getElementById('info-text').innerText = "No se pudo acceder de forma interna a 'organos.json'.";
+                    }
+                }
+            };
+            xhr.send(null);
+        });
+
+        function renderSidebar(organs) {
+            const sidebar = document.getElementById('sidebar-list');
+            sidebar.innerHTML = '';
+
+            organs.forEach((organ, index) => {
+                const item = document.createElement('div');
+                item.className = 'organ-item';
+                if(index === 0) item.classList.add('active');
+                
+                item.innerHTML = `<span class="organ-id">${organ.id}</span> <span class="organ-name">${organ.nombre}</span>`;
+                
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.organ-item').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                    updateMap(organ);
+                });
+
+                sidebar.appendChild(item);
+            });
+        }
+
+        function updateMap(organ) {
+            const bgImage = document.getElementById('map-background');
+            const activePath = document.getElementById('active-path');
+            const infoTitle = document.getElementById('info-title');
+            const infoText = document.getElementById('info-text');
+
+            infoTitle.innerText = `${organ.id} - ${organ.nombre}`;
+            infoText.innerText = organ.informacion || "No hay información disponible para este órgano.";
+
+            const nuevaRuta = organ.tipo + '.png';
+
+            if (bgImage.getAttribute('src') === nuevaRuta) {
+                activePath.setAttribute('d', organ.svg);
+            } else {
+                bgImage.onload = function() {
+                    activePath.setAttribute('d', organ.svg);
+                };
+                bgImage.src = nuevaRuta;
+            }
+        }
+    </script>
+</body>
+</html>
