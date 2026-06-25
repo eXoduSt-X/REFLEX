@@ -8,8 +8,8 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #0c0a0f; /* Fondo negro con un sutil matiz oscuro */
-            color: #f1edf7;
+            background-color: #0A0A0A; /* Negro puro para eliminar matices purpuras */
+            color: #F5F5F7;
             font-family: sans-serif;
             display: flex;
             flex-direction: column;
@@ -20,12 +20,12 @@
         header {
             text-align: center;
             padding: 12px;
-            border-bottom: 1px solid #251f30;
-            background-color: #14111a;
+            border-bottom: 1px solid #222222; /* Gris oscuro neutro */
+            background-color: #121212; /* Gris muy oscuro neutro */
         }
 
         h1 {
-            color: #00AEF0; /* 🔄 Cambiado a tu nuevo color brillante */
+            color: #00AEF0; /* Tu color celeste brillante */
             margin: 0;
             font-size: 20px;
         }
@@ -44,7 +44,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #0c0a0f;
+            background-color: #0A0A0A;
             padding: 10px;
         }
 
@@ -78,10 +78,10 @@
             stroke-width: 4;
         }
 
-        /* PANEL DE INFORMACIÓN INTEGRADO */
+        /* PANEL DE INFORMACI脫N INTEGRADO */
         .info-box {
-            background-color: #14111a;
-            border-top: 1px solid #251f30; 
+            background-color: #121212; /* Gris muy oscuro neutro */
+            border-top: 1px solid #222222; 
             padding: 15px;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.6);
             max-height: 180px;
@@ -90,13 +90,13 @@
 
         .info-box h3 {
             margin: 0 0 6px 0;
-            color: #00AEF0; /* 🔄 Título del órgano cambiado a tu nuevo color */
+            color: #00AEF0; /* Celeste brillante */
             font-size: 16px;
         }
 
         .info-box p {
             margin: 0;
-            color: #e1dbe6;
+            color: #E5E5E7;
             font-size: 13px;
             line-height: 1.4;
             white-space: pre-line;
@@ -106,14 +106,14 @@
         .sidebar {
             flex: 8;
             overflow-y: auto;
-            background-color: #100d14;
-            /* 🛠️ LÍNEA DIVISORIA ALTAMENTE NOTORIA CON TU NUEVO COLOR */
+            background-color: #181818; /* Gris oscuro neutro para la lista */
+            /* L脥NEA DIVISORIA ALTAMENTE NOTORIA CON TU NUEVO COLOR */
             border-top: 2px solid #00AEF0; 
         }
 
         .organ-item {
             padding: 14px 20px;
-            border-bottom: 1px solid #251f30;
+            border-bottom: 1px solid #222222; /* Gris divisorio neutro */
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -121,13 +121,13 @@
         }
 
         .organ-item.active {
-            background-color: rgba(0, 174, 240, 0.1); /* 🔄 Fondo translúcido con tu nuevo color */
-            border-left: 4px solid #00AEF0; /* 🔄 Indicador izquierdo con tu nuevo color */
+            background-color: rgba(0, 174, 240, 0.1); /* Fondo translucido celeste */
+            border-left: 4px solid #00AEF0; /* Indicador izquierdo celeste */
         }
 
         .organ-id {
-            background-color: #251f30;
-            color: #00AEF0; /* 🔄 ID cambiado a tu nuevo color */
+            background-color: #2A2A2A; /* Gris medio oscuro neutro para el ID */
+            color: #00AEF0; /* Texto ID Celeste */
             font-weight: bold;
             padding: 3px 8px;
             border-radius: 4px;
@@ -137,7 +137,7 @@
             text-align: center;
         }
 
-        /* Ajustes de diseño en pantallas grandes (PC / Tablet horizontal) */
+        /* Ajustes de dise帽o en pantallas grandes (PC / Tablet horizontal) */
         @media (min-width: 768px) {
             .main-container {
                 flex-direction: row;
@@ -147,7 +147,7 @@
                 height: auto;
                 flex: none;
                 border-top: none; 
-                border-right: 1px solid #251f30; 
+                border-right: 1px solid #222222; 
             }
             .map-viewport {
                 width: 70%;
@@ -160,9 +160,9 @@
                 left: 25px;
                 width: 320px;
                 max-height: 300px;
-                border: 1px solid #00AEF0; /* 🔄 Borde de caja en PC cambiado */
+                border: 1px solid #00AEF0; 
                 border-radius: 8px;
-                background-color: rgba(20, 17, 26, 0.95);
+                background-color: rgba(18, 18, 18, 0.95);
                 backdrop-filter: blur(4px);
                 box-shadow: 0 4px 15px rgba(0,0,0,0.7);
             }
@@ -187,7 +187,7 @@
 
         <div class="info-box" id="info-panel">
             <h3 id="info-title">Cargando...</h3>
-            <p id="info-text">Selecciona un punto de la lista para ver su descripción detallada aquí.</p>
+            <p id="info-text">Selecciona un punto de la lista para ver su descripcion detallada aqui.</p>
         </div>
 
         <div class="sidebar" id="sidebar-list"></div>
@@ -262,7 +262,7 @@
             const infoText = document.getElementById('info-text');
 
             infoTitle.innerText = `${organ.id} - ${organ.nombre}`;
-            infoText.innerText = organ.informacion || "No hay información disponible para este órgano.";
+            infoText.innerText = organ.informacion || "No hay informacion disponible para este organo.";
 
             const nuevaRuta = organ.tipo + '.png';
 
