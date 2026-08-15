@@ -184,42 +184,11 @@
 
   },
   {
-    "id": "5",
-    "nombre": "Cervicales",
+    "id": "5,6,7,8,9",
+    "nombre": "Cervicales, Dorsales, Lumbares, Sacro, Coccix",
     "tipo": "2",
     "svg": "M873 185ZM604 296Q571 284 528 293 551 306 519 319 572 309 611 323 671 321 604 294ZM371 253q82 6 155 39 29 39-68 8Q438 289 370 279 379 274 374 250m249.015-3.867ZM268 282q7 14 8 29 19-24 94-31Q383 262 369 253 321 246 269 281ZM225 296q17-10 41-14 10 15 8 29Q254 316 239 325 228 312 224 295ZM224 296q7 18 15 30-7 0-55 5Q171 330 181 323 206 301 223 297Z",
     "informacion": "5.-Cervicales: Se consiguen resultados en algias cervicales provocadas por traumatismos o malas posturas mantenidas. Indicado para afecciones de los oídos.\n\n6.-Dorsales torácicas: Aplicar masaje cuando la zona refleja está dolorida.\n\n7.-Lumbares: Las cinco lumbares a menudo están afectadas por las lumbalgias, hernia de disco y en los casos de escoliosis.\n\nDetectamos reflejos dolorosos cuando juntando los pies observamos diferencia de altura de los tobillos. Tratamos por simetría para restablecer el equilibrio, lo que habitualmente sucede en menos de un mes. En el brazo simétrico y en dirección a la pierna corta, masajeamos de forma rotatoria muñeca, codo y brazo. Esta maniobra nos resulta útil en casos de escoliosis.\n\n8.-Sacro: Siguen las cinco vértebras del sacro. A masajear localmente y junto con la técnica para ciáticas que se explica específicamente.\n\n9.-Cóccix: Lo constituyen las 3 o 4 vértebras pequeñas, supuestos restos evolutivos de la cola que presentan los mamíferos. Un golpe puede producir molestias importantes. Insistir en casos de coccigodinia (dolor en cóccix) de cualquier tipo, sea postraumático o referido."
-
-  },
-  {
-    "id": "6",
-    "nombre": "Dorsales torácicas",
-    "tipo": "2",
-    "svg": "M380.719 204.822q83.361 8.289 155.281 37.178 14 40-52.892 21.6Q417 245 373.712 239.704 363.556 219.393 379.708 205.587m249.015-3.867Z",
-    "informacion": "Aplicar masaje cuando la zona refleja está dolorida. "
-  },
-  {
-    "id": "7",
-    "nombre": "Lumbares",
-    "tipo": "2",
-    "svg": "M264.667 237.36q40.797-33.934 113.88-30.154-14.094 18.376-2 32.511Q357.353 233.905 332.924 240.45 299.588 247.662 279.234 264.718m249.015-3.867Z",
-    "informacion": "Las cinco lumbares a menudo están afectadas por las lumbalgias, hernia de disco y en los casos de escoliosis.\n\nDetectamos reflejos dolorosos cuando juntando los pies observamos diferencia de altura de los tobillos. Tratamos por simetría para restablecer el equilibrio, lo que habitualmente sucede en menos de un mes. En el brazo simétrico y en dirección a la pierna corta, masajeamos de forma rotatoria muñeca, codo y brazo. Esta maniobra nos resulta útil en casos de escoliosis."
-
-  },
-  {
-    "id": "8",
-    "nombre": "Sacro",
-    "tipo": "2",
-    "svg": "M226 254q19.84-13.522 40-20 .888 16.743 12 38Q269 270 256 278 247 282 237 292m249.015-3.867Z",
-    "informacion": "Siguen las cinco vértebras del sacro. A masajear localmente y junto con la técnica para ciáticas que se explica específicamente."
-
-  },
-  {
-    "id": "9",
-    "nombre": "Cóccix",
-    "tipo": "2",
-    "svg": "M188.892 270.507q11.977-19.987 34.312-25.956.888 16.743 14.257 42.166Q207.873 297.99 176.591 289.152 183.205 278.671 186.994 272.129m249.015-3.867Z",
-    "informacion": "Lo constituyen las 3 o 4 vértebras pequeñas, supuestos restos evolutivos de la cola que presentan los mamíferos. Un golpe puede producir molestias importantes. Insistir en casos de coccigodinia (dolor en cóccix) de cualquier tipo, sea postraumático o referido."
 
   },
   {
