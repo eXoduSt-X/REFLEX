@@ -46,6 +46,8 @@
             align-items: center;
             background-color: #0A0A0A;
             padding: 10px;
+            overflow: hidden;
+            touch-action: none; /* dejamos que nuestro JS maneje pinch/pan/drag */
         }
 
         .map-container {
@@ -53,6 +55,12 @@
             width: 100%;
             max-width: 800px;
             aspect-ratio: 800 / 748;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        .map-container.panning {
+            cursor: grabbing;
         }
 
         .map-bg {
@@ -60,6 +68,9 @@
             height: 100%;
             object-fit: contain;
             display: block;
+            -webkit-user-drag: none;
+            user-select: none;
+            pointer-events: none;
         }
 
         .svg-overlay {
@@ -76,6 +87,37 @@
             fill-opacity: 0.4;
             stroke: #000000; 
             stroke-width: 4;
+        }
+
+        /* Botones de zoom */
+        .zoom-controls {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 5;
+        }
+
+        .zoom-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1px solid #00AEF0;
+            background-color: rgba(18, 18, 18, 0.9);
+            color: #00AEF0;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .zoom-btn:active {
+            background-color: rgba(0, 174, 240, 0.2);
         }
 
         /* PANEL DE INFORMACIÓN INTEGRADO */
@@ -176,12 +218,17 @@
     </header>
 
     <div class="main-container">
-        <div class="map-viewport">
-            <div class="map-container">
+        <div class="map-viewport" id="map-viewport">
+            <div class="map-container" id="map-container">
                 <img id="map-background" src="P.png" alt="Mapa Base" class="map-bg">
                 <svg id="svg-canvas" class="svg-overlay" viewBox="0 0 800 748">
                     <path id="active-path" class="highlight-path" d="" />
                 </svg>
+            </div>
+            <div class="zoom-controls">
+                <div class="zoom-btn" id="zoom-in">+</div>
+                <div class="zoom-btn" id="zoom-out">−</div>
+                <div class="zoom-btn" id="zoom-reset" style="font-size:14px;">⟲</div>
             </div>
         </div>
 
@@ -232,6 +279,8 @@
                 }
             };
             xhr.send(null);
+
+            initZoomPan();
         });
 
         function renderSidebar(organs) {
@@ -274,6 +323,212 @@
                 };
                 bgImage.src = nuevaRuta;
             }
+        }
+
+        /* ================= ZOOM / PAN ================= */
+        function initZoomPan() {
+            const viewport = document.getElementById('map-viewport');
+            const container = document.getElementById('map-container');
+
+            const MIN_SCALE = 1;
+            const MAX_SCALE = 4;
+
+            let scale = 1;
+            let originX = 0; // translate en px
+            let originY = 0;
+
+            let isPanning = false;
+            let startPanX = 0;
+            let startPanY = 0;
+            let startOriginX = 0;
+            let startOriginY = 0;
+
+            // Estado de pinch (dos dedos)
+            let pinchStartDist = 0;
+            let pinchStartScale = 1;
+            let pinchStartOriginX = 0;
+            let pinchStartOriginY = 0;
+            let pinchMidX = 0;
+            let pinchMidY = 0;
+
+            function applyTransform() {
+                container.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+                container.classList.toggle('panning', isPanning);
+            }
+
+            function clampOrigin() {
+                if (scale <= MIN_SCALE) {
+                    originX = 0;
+                    originY = 0;
+                    return;
+                }
+                const rect = viewport.getBoundingClientRect();
+                const contW = container.offsetWidth * scale;
+                const contH = container.offsetHeight * scale;
+
+                const minX = Math.min(0, rect.width - contW);
+                const minY = Math.min(0, rect.height - contH);
+
+                originX = Math.max(minX, Math.min(0, originX));
+                originY = Math.max(minY, Math.min(0, originY));
+            }
+
+            function zoomAt(clientX, clientY, newScale) {
+                newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+                const rect = viewport.getBoundingClientRect();
+                const px = clientX - rect.left;
+                const py = clientY - rect.top;
+
+                // Punto en coordenadas del contenido antes del zoom
+                const contentX = (px - originX) / scale;
+                const contentY = (py - originY) / scale;
+
+                scale = newScale;
+
+                originX = px - contentX * scale;
+                originY = py - contentY * scale;
+
+                clampOrigin();
+                applyTransform();
+            }
+
+            function distance(t1, t2) {
+                const dx = t1.clientX - t2.clientX;
+                const dy = t1.clientY - t2.clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            // ---- Rueda del mouse (PC) ----
+            viewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+                zoomAt(e.clientX, e.clientY, scale * delta);
+            }, { passive: false });
+
+            // ---- Doble click / doble tap ----
+            let lastTap = 0;
+            function handleDoubleTap(clientX, clientY) {
+                if (scale > MIN_SCALE) {
+                    scale = MIN_SCALE;
+                    originX = 0;
+                    originY = 0;
+                    applyTransform();
+                } else {
+                    zoomAt(clientX, clientY, 2.5);
+                }
+            }
+
+            viewport.addEventListener('dblclick', (e) => {
+                handleDoubleTap(e.clientX, e.clientY);
+            });
+
+            // ---- Arrastre con mouse (cuando esta ampliado) ----
+            viewport.addEventListener('mousedown', (e) => {
+                if (scale <= MIN_SCALE) return;
+                isPanning = true;
+                startPanX = e.clientX;
+                startPanY = e.clientY;
+                startOriginX = originX;
+                startOriginY = originY;
+                applyTransform();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+                originX = startOriginX + (e.clientX - startPanX);
+                originY = startOriginY + (e.clientY - startPanY);
+                clampOrigin();
+                applyTransform();
+            });
+
+            window.addEventListener('mouseup', () => {
+                isPanning = false;
+                applyTransform();
+            });
+
+            // ---- Touch: pinch to zoom, pan de un dedo, doble tap ----
+            viewport.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    isPanning = false;
+                    pinchStartDist = distance(e.touches[0], e.touches[1]);
+                    pinchStartScale = scale;
+                    pinchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    pinchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    pinchStartOriginX = originX;
+                    pinchStartOriginY = originY;
+                } else if (e.touches.length === 1) {
+                    const now = Date.now();
+                    if (now - lastTap < 300) {
+                        handleDoubleTap(e.touches[0].clientX, e.touches[0].clientY);
+                        lastTap = 0;
+                        return;
+                    }
+                    lastTap = now;
+
+                    if (scale > MIN_SCALE) {
+                        isPanning = true;
+                        startPanX = e.touches[0].clientX;
+                        startPanY = e.touches[0].clientY;
+                        startOriginX = originX;
+                        startOriginY = originY;
+                    }
+                }
+            }, { passive: true });
+
+            viewport.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const newDist = distance(e.touches[0], e.touches[1]);
+                    const factor = newDist / pinchStartDist;
+                    const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, pinchStartScale * factor));
+
+                    const rect = viewport.getBoundingClientRect();
+                    const px = pinchMidX - rect.left;
+                    const py = pinchMidY - rect.top;
+
+                    const contentX = (px - pinchStartOriginX) / pinchStartScale;
+                    const contentY = (py - pinchStartOriginY) / pinchStartScale;
+
+                    scale = newScale;
+                    originX = px - contentX * scale;
+                    originY = py - contentY * scale;
+
+                    clampOrigin();
+                    applyTransform();
+                } else if (e.touches.length === 1 && isPanning) {
+                    e.preventDefault();
+                    originX = startOriginX + (e.touches[0].clientX - startPanX);
+                    originY = startOriginY + (e.touches[0].clientY - startPanY);
+                    clampOrigin();
+                    applyTransform();
+                }
+            }, { passive: false });
+
+            viewport.addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) {
+                    pinchStartDist = 0;
+                }
+                if (e.touches.length === 0) {
+                    isPanning = false;
+                    applyTransform();
+                }
+            });
+
+            // ---- Botones +/-/reset ----
+            document.getElementById('zoom-in').addEventListener('click', () => {
+                const rect = viewport.getBoundingClientRect();
+                zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, scale * 1.4);
+            });
+            document.getElementById('zoom-out').addEventListener('click', () => {
+                const rect = viewport.getBoundingClientRect();
+                zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, scale / 1.4);
+            });
+            document.getElementById('zoom-reset').addEventListener('click', () => {
+                scale = MIN_SCALE;
+                originX = 0;
+                originY = 0;
+                applyTransform();
+            });
         }
     </script>
 </body>
