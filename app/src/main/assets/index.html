@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Reflexologia</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0A0A0A; /* Negro puro para eliminar matices purpuras */
+            color: #F5F5F7;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 12px;
+            border-bottom: 1px solid #222222; /* Gris oscuro neutro */
+            background-color: #121212; /* Gris muy oscuro neutro */
+        }
+
+        h1 {
+            color: #00AEF0; /* Tu color celeste brillante */
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Visor del Mapa */
+        .map-viewport {
+            flex: 12;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0A0A0A;
+            padding: 10px;
+            overflow: hidden;
+            touch-action: none; /* dejamos que nuestro JS maneje pinch/pan/drag */
+        }
+
+        .map-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 800 / 748;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        .map-container.panning {
+            cursor: grabbing;
+        }
+
+        .map-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            -webkit-user-drag: none;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .svg-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .highlight-path {
+            fill: #FFA500; 
+            fill-opacity: 0.4;
+            stroke: #000000; 
+            stroke-width: 4;
+        }
+
+        /* Botones de zoom */
+        .zoom-controls {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 5;
+        }
+
+        .zoom-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1px solid #00AEF0;
+            background-color: rgba(18, 18, 18, 0.9);
+            color: #00AEF0;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .zoom-btn:active {
+            background-color: rgba(0, 174, 240, 0.2);
+        }
+
+        /* PANEL DE INFORMACIÓN INTEGRADO */
+        .info-box {
+            background-color: #121212; /* Gris muy oscuro neutro */
+            border-top: 1px solid #222222; 
+            padding: 15px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.6);
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .info-box h3 {
+            margin: 0 0 6px 0;
+            color: #00AEF0; /* Celeste brillante */
+            font-size: 16px;
+        }
+
+        .info-box p {
+            margin: 0;
+            color: #E5E5E7;
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-line;
+        }
+
+        /* Panel de Lista inferior scrolleable */
+        .sidebar {
+            flex: 8;
+            overflow-y: auto;
+            background-color: #181818; /* Gris oscuro neutro para la lista */
+            /* LÍNEA DIVISORIA ALTAMENTE NOTORIA CON TU NUEVO COLOR */
+            border-top: 2px solid #00AEF0; 
+        }
+
+        .organ-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid #222222; /* Gris divisorio neutro */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .organ-item.active {
+            background-color: rgba(0, 174, 240, 0.1); /* Fondo translucido celeste */
+            border-left: 4px solid #00AEF0; /* Indicador izquierdo celeste */
+        }
+
+        .organ-id {
+            background-color: #2A2A2A; /* Gris medio oscuro neutro para el ID */
+            color: #00AEF0; /* Texto ID Celeste */
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-right: 15px;
+            font-size: 14px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* Ajustes de diseño en pantallas grandes (PC / Tablet horizontal) */
+        @media (min-width: 768px) {
+            .main-container {
+                flex-direction: row;
+            }
+            .sidebar {
+                width: 30%;
+                height: auto;
+                flex: none;
+                border-top: none; 
+                border-right: 1px solid #222222; 
+            }
+            .map-viewport {
+                width: 70%;
+                flex: none;
+                height: 100%;
+            }
+            .info-box {
+                position: absolute;
+                bottom: 25px;
+                left: 25px;
+                width: 320px;
+                max-height: 300px;
+                border: 1px solid #00AEF0; 
+                border-radius: 8px;
+                background-color: rgba(18, 18, 18, 0.95);
+                backdrop-filter: blur(4px);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Mapa de Reflexologia</h1>
+    </header>
+
+    <div class="main-container">
+        <div class="map-viewport" id="map-viewport">
+            <div class="map-container" id="map-container">
+                <img id="map-background" src="P.png" alt="Mapa Base" class="map-bg">
+                <svg id="svg-canvas" class="svg-overlay" viewBox="0 0 800 748">
+                    <path id="active-path" class="highlight-path" d="" />
+                </svg>
+            </div>
+            <div class="zoom-controls">
+                <div class="zoom-btn" id="zoom-in">+</div>
+                <div class="zoom-btn" id="zoom-out">−</div>
+                <div class="zoom-btn" id="zoom-reset" style="font-size:14px;">⟲</div>
+            </div>
+        </div>
+
+        <div class="info-box" id="info-panel">
+            <h3 id="info-title">Cargando...</h3>
+            <p id="info-text">Selecciona un punto de la lista para ver su descripcion detallada aqui.</p>
+        </div>
+
+        <div class="sidebar" id="sidebar-list"></div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", "organos.json", true);
+            
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200 || xhr.status === 0) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            
+                            data.sort((a, b) => {
+                                const aIsNum = /^\d/.test(a.id);
+                                const bIsNum = /^\d/.test(b.id);
+
+                                if (aIsNum && !bIsNum) return 1;
+                                if (!aIsNum && bIsNum) return -1;
+
+                                return a.id.localeCompare(b.id, undefined, {numeric: true, sensitivity: 'base'});
+                            });
+                            
+                            renderSidebar(data);
+                            
+                            if (data.length > 0) {
+                                updateMap(data[0]);
+                            }
+                        } catch (e) {
+                            console.error("Error al procesar el formato del JSON:", e);
+                            document.getElementById('info-title').innerText = "Error de formato";
+                            document.getElementById('info-text').innerText = "El archivo JSON contiene un error de sintaxis interna.";
+                        }
+                    } else {
+                        console.error("No se pudo leer el archivo organos.json. Status:", xhr.status);
+                        document.getElementById('info-title').innerText = "Error de carga";
+                        document.getElementById('info-text').innerText = "No se pudo acceder de forma interna a 'organos.json'.";
+                    }
+                }
+            };
+            xhr.send(null);
+
+            initZoomPan();
+        });
+
+        function renderSidebar(organs) {
+            const sidebar = document.getElementById('sidebar-list');
+            sidebar.innerHTML = '';
+
+            organs.forEach((organ, index) => {
+                const item = document.createElement('div');
+                item.className = 'organ-item';
+                if(index === 0) item.classList.add('active');
+                
+                item.innerHTML = `<span class="organ-id">${organ.id}</span> <span class="organ-name">${organ.nombre}</span>`;
+                
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.organ-item').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                    updateMap(organ);
+                });
+
+                sidebar.appendChild(item);
+            });
+        }
+
+        function updateMap(organ) {
+            const bgImage = document.getElementById('map-background');
+            const activePath = document.getElementById('active-path');
+            const infoTitle = document.getElementById('info-title');
+            const infoText = document.getElementById('info-text');
+
+            infoTitle.innerText = `${organ.id} - ${organ.nombre}`;
+            infoText.innerText = organ.informacion || "No hay informacion disponible para este organo.";
+
+            const nuevaRuta = organ.tipo + '.png';
+
+            if (bgImage.getAttribute('src') === nuevaRuta) {
+                activePath.setAttribute('d', organ.svg);
+            } else {
+                bgImage.onload = function() {
+                    activePath.setAttribute('d', organ.svg);
+                };
+                bgImage.src = nuevaRuta;
+            }
+        }
+
+        /* ================= ZOOM / PAN ================= */
+        function initZoomPan() {
+            const viewport = document.getElementById('map-viewport');
+            const container = document.getElementById('map-container');
+
+            const MIN_SCALE = 1;
+            const MAX_SCALE = 4;
+
+            let scale = 1;
+            let originX = 0; // translate en px
+            let originY = 0;
+
+            let isPanning = false;
+            let startPanX = 0;
+            let startPanY = 0;
+            let startOriginX = 0;
+            let startOriginY = 0;
+
+            // Estado de pinch (dos dedos)
+            let pinchStartDist = 0;
+            let pinchStartScale = 1;
+            let pinchStartOriginX = 0;
+            let pinchStartOriginY = 0;
+            let pinchMidX = 0;
+            let pinchMidY = 0;
+
+            function applyTransform() {
+                container.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+                container.classList.toggle('panning', isPanning);
+            }
+
+            function clampOrigin() {
+                if (scale <= MIN_SCALE) {
+                    originX = 0;
+                    originY = 0;
+                    return;
+                }
+                const rect = viewport.getBoundingClientRect();
+                const contW = container.offsetWidth * scale;
+                const contH = container.offsetHeight * scale;
+
+                const minX = Math.min(0, rect.width - contW);
+                const minY = Math.min(0, rect.height - contH);
+
+                originX = Math.max(minX, Math.min(0, originX));
+                originY = Math.max(minY, Math.min(0, originY));
+            }
+
+            function zoomAt(clientX, clientY, newScale) {
+                newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+                const rect = viewport.getBoundingClientRect();
+                const px = clientX - rect.left;
+                const py = clientY - rect.top;
+
+                // Punto en coordenadas del contenido antes del zoom
+                const contentX = (px - originX) / scale;
+                const contentY = (py - originY) / scale;
+
+                scale = newScale;
+
+                originX = px - contentX * scale;
+                originY = py - contentY * scale;
+
+                clampOrigin();
+                applyTransform();
+            }
+
+            function distance(t1, t2) {
+                const dx = t1.clientX - t2.clientX;
+                const dy = t1.clientY - t2.clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            // ---- Rueda del mouse (PC) ----
+            viewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+                zoomAt(e.clientX, e.clientY, scale * delta);
+            }, { passive: false });
+
+            // ---- Doble click / doble tap ----
+            let lastTap = 0;
+            function handleDoubleTap(clientX, clientY) {
+                if (scale > MIN_SCALE) {
+                    scale = MIN_SCALE;
+                    originX = 0;
+                    originY = 0;
+                    applyTransform();
+                } else {
+                    zoomAt(clientX, clientY, 2.5);
+                }
+            }
+
+            viewport.addEventListener('dblclick', (e) => {
+                handleDoubleTap(e.clientX, e.clientY);
+            });
+
+            // ---- Arrastre con mouse (cuando esta ampliado) ----
+            viewport.addEventListener('mousedown', (e) => {
+                if (scale <= MIN_SCALE) return;
+                isPanning = true;
+                startPanX = e.clientX;
+                startPanY = e.clientY;
+                startOriginX = originX;
+                startOriginY = originY;
+                applyTransform();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+                originX = startOriginX + (e.clientX - startPanX);
+                originY = startOriginY + (e.clientY - startPanY);
+                clampOrigin();
+                applyTransform();
+            });
+
+            window.addEventListener('mouseup', () => {
+                isPanning = false;
+                applyTransform();
+            });
+
+            // ---- Touch: pinch to zoom, pan de un dedo, doble tap ----
+            viewport.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    isPanning = false;
+                    pinchStartDist = distance(e.touches[0], e.touches[1]);
+                    pinchStartScale = scale;
+                    pinchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    pinchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    pinchStartOriginX = originX;
+                    pinchStartOriginY = originY;
+                } else if (e.touches.length === 1) {
+                    const now = Date.now();
+                    if (now - lastTap < 300) {
+                        handleDoubleTap(e.touches[0].clientX, e.touches[0].clientY);
+                        lastTap = 0;
+                        return;
+                    }
+                    lastTap = now;
+
+                    if (scale > MIN_SCALE) {
+                        isPanning = true;
+                        startPanX = e.touches[0].clientX;
+                        startPanY = e.touches[0].clientY;
+                        startOriginX = originX;
+                        startOriginY = originY;
+                    }
+                }
+            }, { passive: true });
+
+            viewport.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const newDist = distance(e.touches[0], e.touches[1]);
+                    const factor = newDist / pinchStartDist;
+                    const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, pinchStartScale * factor));
+
+                    const rect = viewport.getBoundingClientRect();
+                    const px = pinchMidX - rect.left;
+                    const py = pinchMidY - rect.top;
+
+                    const contentX = (px - pinchStartOriginX) / pinchStartScale;
+                    const contentY = (py - pinchStartOriginY) / pinchStartScale;
+
+                    scale = newScale;
+                    originX = px - contentX * scale;
+                    originY = py - contentY * scale;
+
+                    clampOrigin();
+                    applyTransform();
+                } else if (e.touches.length === 1 && isPanning) {
+                    e.preventDefault();
+                    originX = startOriginX + (e.touches[0].clientX - startPanX);
+                    originY = startOriginY + (e.touches[0].clientY - startPanY);
+                    clampOrigin();
+                    applyTransform();
+                }
+            }, { passive: false });
+
+            viewport.addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) {
+                    pinchStartDist = 0;
+                }
+                if (e.touches.length === 0) {
+                    isPanning = false;
+                    applyTransform();
+                }
+            });
+
+            // ---- Botones +/-/reset ----
+            document.getElementById('zoom-in').addEventListener('click', () => {
+                const rect = viewport.getBoundingClientRect();
+                zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, scale * 1.4);
+            });
+            document.getElementById('zoom-out').addEventListener('click', () => {
+                const rect = viewport.getBoundingClientRect();
+                zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, scale / 1.4);
+            });
+            document.getElementById('zoom-reset').addEventListener('click', () => {
+                scale = MIN_SCALE;
+                originX = 0;
+                originY = 0;
+                applyTransform();
+            });
+        }
+    </script>
+</body>
+</html>
