@@ -19,70 +19,18 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Generar estructura base de Android al vuelo
-      run: |
-        mkdir -p app/src/main
-        
-        # 1. Crear el build.gradle de la raíz
-        cat << 'EOF' > build.gradle
-        buildscript {
-            repositories { google(); mavenCentral() }
-            dependencies { classpath "com.android.tools.build:gradle:8.2.2" }
-        }
-        allprojects { repositories { google(); mavenCentral() } }
-        EOF
-
-        # 2. Crear el settings.gradle
-        echo "include ':app'" > settings.gradle
-
-        # 3. Crear el build.gradle de la app
-        cat << 'EOF' > app/build.gradle
-        plugins { id 'com.android.application' }
-        android {
-            namespace 'com.reflexologia.app'
-            compileSdk 34
-            defaultConfig {
-                applicationId "com.reflexologia.app"
-                minSdk 26
-                targetSdk 34
-                versionCode 1
-                versionName "1.0"
-            }
-        }
-        EOF
-
-        # 4. Crear el AndroidManifest.xml básico con soporte de tráfico y lectura local
-        cat << 'EOF' > app/src/main/AndroidManifest.xml
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <application
-                android:label="Mapa Reflexología"
-                android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-                android:allowBackup="true"
-                android:usesCleartextTraffic="true">
-                <activity android:name="com.reflexologia.app.MainActivity" android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-                </activity>
-            </application>
-        </manifest>
-        EOF
-
-    # 🛠️ PASO CORREGIDO: Usamos la acción oficial para configurar Gradle 8.5 de forma limpia
-    - name: Configurar Gradle Moderno
+    - name: Configurar Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: 8.5
 
-    # Generamos el wrapper usando la versión moderna ya activa
-    - name: Inicializar Gradle Wrapper
+    - name: Generar Wrapper
       run: |
         gradle wrapper --gradle-version 8.5
         chmod +x gradlew
 
     - name: Compilar APK con Gradle
-      run: ./gradlew assembleDebug
+      run: ./gradlew assembleDebug --stacktrace
 
     - name: Subir APK lista a GitHub Artifacts
       uses: actions/upload-artifact@v4
